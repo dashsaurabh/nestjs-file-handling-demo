@@ -1,5 +1,7 @@
-import { Controller, Get, Post, UploadedFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Response, StreamableFile, UploadedFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor, FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
 import { AppService } from './app.service';
 
 @Controller()
@@ -36,5 +38,21 @@ export class AppController {
   @UseInterceptors(AnyFilesInterceptor())
   uploadAnyFiles(@UploadedFiles() files: Array<Express.Multer.File>) {
     console.log(files);
+  }
+
+  @Get('stream-file')
+  getFile(): StreamableFile {
+    const file = createReadStream(join(process.cwd(), 'package.json'));
+    return new StreamableFile(file);
+  }
+
+  @Get('stream-file-customize')
+  getFileCustomizedResponse(@Response({ passthrough: true }) res): StreamableFile {
+    const file = createReadStream(join(process.cwd(), 'package.json'));
+    res.set({
+      'Content-Type': 'application/json',
+      'Content-Disposition': 'attachment; filename="package.json'
+    })
+    return new StreamableFile(file);
   }
 }
